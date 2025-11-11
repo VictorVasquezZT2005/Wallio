@@ -26,21 +26,52 @@ import androidx.compose.foundation.lazy.grid.GridCells
 fun AddEditTransactionScreen(
     viewModel: TransactionsViewModel,
     onBack: () -> Unit,
-    onSaveSuccess: () -> Unit
+    onSaveSuccess: () -> Unit,
+    transactionId: String? = null
 ) {
-    var title by remember { mutableStateOf("") }
-    var amount by remember { mutableStateOf("") }
-    var selectedType by remember { mutableStateOf(TransactionType.EXPENSE) }
-    var selectedCategory by remember { mutableStateOf("Comida") }
-    var description by remember { mutableStateOf("") }
+    val isEditMode = transactionId != null
+    val transactionsState = viewModel.state.collectAsState().value
+
+    // Buscar la transacción a editar
+    val transactionToEdit = remember(transactionId, transactionsState.transactions) {
+        transactionId?.let { id ->
+            transactionsState.transactions.find { it.id == id }
+        }
+    }
+
+    // Estados con valores iniciales basados en modo edición
+    var title by remember { mutableStateOf(transactionToEdit?.title ?: "") }
+    var amount by remember { mutableStateOf(transactionToEdit?.amount?.toString() ?: "") }
+    var selectedType by remember {
+        mutableStateOf(transactionToEdit?.type ?: TransactionType.EXPENSE)
+    }
+    var selectedCategory by remember {
+        mutableStateOf(transactionToEdit?.category ?: "Comida")
+    }
+    var description by remember { mutableStateOf(transactionToEdit?.description ?: "") }
 
     val coroutineScope = rememberCoroutineScope()
     var isLoading by remember { mutableStateOf(false) }
 
+    // Efecto para cargar datos cuando la transacción se encuentra
+    LaunchedEffect(transactionToEdit) {
+        if (transactionToEdit != null) {
+            title = transactionToEdit.title
+            amount = transactionToEdit.amount.toString()
+            selectedType = transactionToEdit.type
+            selectedCategory = transactionToEdit.category
+            description = transactionToEdit.description
+        }
+    }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Nueva Transacción") },
+                title = {
+                    Text(
+                        if (isEditMode) "Editar Transacción" else "Nueva Transacción"
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Atrás")
@@ -58,19 +89,38 @@ fun AddEditTransactionScreen(
                     if (title.isNotEmpty() && amount.isNotEmpty() && !isLoading) {
                         isLoading = true
                         coroutineScope.launch {
-                            // ✅ OBTENER EL USER ID Y PASARLO A LA TRANSACCIÓN
                             val userId = viewModel.getCurrentUserId()
+                            val transactionAmount = amount.toDoubleOrNull() ?: 0.0
 
-                            val transaction = Transaction(
-                                title = title,
-                                amount = amount.toDoubleOrNull() ?: 0.0,
-                                type = selectedType,
-                                category = selectedCategory,
-                                description = description,
-                                date = Date(),
-                                userId = userId // ✅ AGREGAR USER ID A LA TRANSACCIÓN
-                            )
-                            val success = viewModel.addTransaction(transaction)
+                            val transaction = if (isEditMode && transactionToEdit != null) {
+                                // Modo edición - mantener el mismo ID y fecha original
+                                transactionToEdit.copy(
+                                    title = title,
+                                    amount = transactionAmount,
+                                    type = selectedType,
+                                    category = selectedCategory,
+                                    description = description
+                                )
+                            } else {
+                                // Modo creación - nuevo ID y fecha actual
+                                Transaction(
+                                    id = Transaction().id, // Generar nuevo ID
+                                    title = title,
+                                    amount = transactionAmount,
+                                    type = selectedType,
+                                    category = selectedCategory,
+                                    description = description,
+                                    date = Date(),
+                                    userId = userId
+                                )
+                            }
+
+                            val success = if (isEditMode) {
+                                viewModel.updateTransaction(transaction)
+                            } else {
+                                viewModel.addTransaction(transaction)
+                            }
+
                             if (success) {
                                 onSaveSuccess()
                             }
@@ -83,7 +133,7 @@ fun AddEditTransactionScreen(
                 if (isLoading) {
                     CircularProgressIndicator(modifier = Modifier.size(16.dp))
                 } else {
-                    Text("Guardar")
+                    Text(if (isEditMode) "Actualizar" else "Guardar")
                 }
             }
         }

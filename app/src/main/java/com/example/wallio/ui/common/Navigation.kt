@@ -13,6 +13,9 @@ import com.example.wallio.ui.auth.AuthViewModelFactory
 import com.example.wallio.ui.auth.LoginScreen
 import com.example.wallio.ui.auth.RegisterScreen
 import com.example.wallio.ui.dashboard.DashboardScreen
+import com.example.wallio.ui.reports.ChartsViewModel
+import com.example.wallio.ui.reports.ChartsViewModelFactory
+import com.example.wallio.ui.reports.ReportsScreen
 import com.example.wallio.ui.transactions.AddEditTransactionScreen
 import com.example.wallio.ui.transactions.TransactionListScreen
 import com.example.wallio.ui.transactions.TransactionsViewModel
@@ -61,6 +64,7 @@ fun Navigation() {
                 authViewModel = authViewModel,
                 onAddTransaction = { navController.navigate("add-transaction") },
                 onViewAllTransactions = { navController.navigate("transactions") },
+                onViewReports = { navController.navigate("reports") }, // NUEVO
                 onLogout = {
                     authViewModel.logout()
                     navController.navigate("login") { popUpTo(0) }
@@ -68,6 +72,7 @@ fun Navigation() {
             )
         }
 
+        // Ruta para agregar transacción (sin parámetros)
         composable("add-transaction") {
             val userId = authRepository.getCurrentUserId() ?: "local_user"
             val transactionRepository = remember { TransactionRepository() }
@@ -82,6 +87,23 @@ fun Navigation() {
             )
         }
 
+        // Nueva ruta para editar transacción con parámetro
+        composable("edit-transaction/{transactionId}") { backStackEntry ->
+            val userId = authRepository.getCurrentUserId() ?: "local_user"
+            val transactionRepository = remember { TransactionRepository() }
+            val transactionsViewModel: TransactionsViewModel = viewModel(
+                factory = TransactionsViewModelFactory(transactionRepository, userId)
+            )
+            val transactionId = backStackEntry.arguments?.getString("transactionId")
+
+            AddEditTransactionScreen(
+                viewModel = transactionsViewModel,
+                onBack = { navController.popBackStack() },
+                onSaveSuccess = { navController.popBackStack() },
+                transactionId = transactionId
+            )
+        }
+
         composable("transactions") {
             val userId = authRepository.getCurrentUserId() ?: "local_user"
             val transactionRepository = remember { TransactionRepository() }
@@ -92,7 +114,24 @@ fun Navigation() {
             TransactionListScreen(
                 viewModel = transactionsViewModel,
                 onBack = { navController.popBackStack() },
-                onAddTransaction = { navController.navigate("add-transaction") }
+                onAddTransaction = { navController.navigate("add-transaction") },
+                onEditTransaction = { transactionId ->
+                    navController.navigate("edit-transaction/$transactionId")
+                }
+            )
+        }
+
+        // NUEVA RUTA: Reportes y Gráficos
+        composable("reports") {
+            val userId = authRepository.getCurrentUserId() ?: "local_user"
+            val transactionRepository = remember { TransactionRepository() }
+            val chartsViewModel: ChartsViewModel = viewModel(
+                factory = ChartsViewModelFactory(transactionRepository, userId)
+            )
+
+            ReportsScreen(
+                viewModel = chartsViewModel,
+                onBack = { navController.popBackStack() }
             )
         }
     }

@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,7 +19,8 @@ import kotlinx.coroutines.launch
 fun TransactionListScreen(
     viewModel: TransactionsViewModel,
     onBack: () -> Unit,
-    onAddTransaction: () -> Unit
+    onAddTransaction: () -> Unit,
+    onEditTransaction: (String) -> Unit
 ) {
     val transactionsState = viewModel.state.collectAsState().value
     val coroutineScope = rememberCoroutineScope()
@@ -75,6 +77,7 @@ fun TransactionListScreen(
                 ) { transaction ->
                     TransactionItem(
                         transaction = transaction,
+                        onEdit = { onEditTransaction(transaction.id) },
                         onDelete = {
                             coroutineScope.launch {
                                 viewModel.deleteTransaction(transaction.id)
@@ -90,6 +93,7 @@ fun TransactionListScreen(
 @Composable
 fun TransactionItem(
     transaction: com.example.wallio.data.model.Transaction,
+    onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
     Card(
@@ -148,6 +152,16 @@ fun TransactionItem(
                     fontWeight = MaterialTheme.typography.bodyLarge.fontWeight
                 )
 
+                // Botón de editar
+                IconButton(onClick = onEdit) {
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = "Editar",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                // Botón de eliminar
                 IconButton(onClick = onDelete) {
                     Icon(
                         Icons.Default.Delete,

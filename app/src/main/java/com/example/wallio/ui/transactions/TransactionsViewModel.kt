@@ -72,6 +72,11 @@ class TransactionsViewModel(
         }
     }
 
+    // NUEVO MÉTODO: Obtener transacción por ID
+    fun getTransactionById(transactionId: String): Transaction? {
+        return _state.value.transactions.find { it.id == transactionId }
+    }
+
     fun getTotalIncome(): Double {
         return _state.value.transactions
             .filter { it.type == TransactionType.INCOME }

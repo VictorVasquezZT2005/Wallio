@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.*
@@ -23,6 +24,7 @@ fun DashboardScreen(
     authViewModel: AuthViewModel,
     onAddTransaction: () -> Unit,
     onViewAllTransactions: () -> Unit,
+    onViewReports: () -> Unit, // Nuevo parámetro para reportes
     onLogout: () -> Unit
 ) {
     val transactionsState = viewModel.state.collectAsState().value
@@ -74,19 +76,11 @@ fun DashboardScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Botón para ver todas las transacciones
-                Button(
-                    onClick = onViewAllTransactions,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
-                ) {
-                    Icon(Icons.Default.List, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Ver todas las transacciones")
-                }
+                // Botones de acciones
+                ActionButtons(
+                    onViewAllTransactions = onViewAllTransactions,
+                    onViewReports = onViewReports
+                )
 
                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -117,6 +111,45 @@ fun DashboardScreen(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun ActionButtons(
+    onViewAllTransactions: () -> Unit,
+    onViewReports: () -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Botón para ver todas las transacciones
+        Button(
+            onClick = onViewAllTransactions,
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+        ) {
+            Icon(Icons.Default.List, contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Ver todas las transacciones")
+        }
+
+        // Botón para ver reportes (NUEVO)
+        Button(
+            onClick = onViewReports,
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+            )
+        ) {
+            Icon(Icons.Default.Analytics, contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Ver Reportes y Gráficos")
         }
     }
 }
