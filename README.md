@@ -141,6 +141,6 @@ Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE.md](LICENSE.m
 
 ---
 
-**¿Listo para tomar el control de tus finanzas?** 🚀 [Descarga Wallio] y comienza tu journey financiero hoy mismo.
+**¿Listo para tomar el control de tus finanzas?** 🚀 Descarga: [Wallio](https://github.com/VictorVasquezZT2005/Wallio/releases)y comienza tu journey financiero hoy mismo.
 
 *Wallio - Donde cada transacción cuenta* 💫
