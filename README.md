@@ -136,7 +136,7 @@ Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE.md](LICENSE.m
 ## 👨‍💻 Desarrollador
 
 **Tu Nombre**
-- GitHub: [@VictorVasquezZT2005](https://github.com/VictorVasquezZT2005)
+- GitHub: [@VVictorZT2005](https://github.com/VictorVasquezZT2005)
 - LinkedIn: [Victor Vasquez](https://www.linkedin.com/in/victor-vasquez-4555522ba/)
 
 ---
