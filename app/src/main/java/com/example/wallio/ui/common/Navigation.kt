@@ -12,6 +12,7 @@ import com.example.wallio.ui.auth.AuthViewModel
 import com.example.wallio.ui.auth.AuthViewModelFactory
 import com.example.wallio.ui.auth.LoginScreen
 import com.example.wallio.ui.auth.RegisterScreen
+import com.example.wallio.ui.credits.CreditsScreen
 import com.example.wallio.ui.dashboard.DashboardScreen
 import com.example.wallio.ui.reports.ChartsViewModel
 import com.example.wallio.ui.reports.ChartsViewModelFactory
@@ -62,6 +63,7 @@ fun Navigation() {
                 onAddTransaction = { navController.navigate("add-transaction") },
                 onViewAllTransactions = { navController.navigate("transactions") },
                 onViewReports = { navController.navigate("reports") },
+                onViewCredits = { navController.navigate("credits") }, // NUEVO: agregado onViewCredits
                 onLogout = {
                     authViewModel.logout()
                     navController.navigate("login") { popUpTo(0) }
@@ -118,7 +120,7 @@ fun Navigation() {
             )
         }
 
-        // NUEVA RUTA: Reportes y Gráficos
+        // RUTA: Reportes y Gráficos
         composable("reports") {
             val userId = authRepository.getCurrentUserId() ?: "local_user"
             val transactionRepository = remember { TransactionRepository() }
@@ -128,6 +130,13 @@ fun Navigation() {
 
             ReportsScreen(
                 viewModel = chartsViewModel,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        // NUEVA RUTA: Créditos
+        composable("credits") {
+            CreditsScreen(
                 onBack = { navController.popBackStack() }
             )
         }

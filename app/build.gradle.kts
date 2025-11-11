@@ -36,6 +36,13 @@ android {
 
     kotlinOptions {
         jvmTarget = "1.8"
+        // AGREGAR ESTAS LÍNEAS para eliminar los warnings de APIs experimentales
+        freeCompilerArgs += listOf(
+            "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
+            "-opt-in=androidx.compose.material.ExperimentalMaterialApi",
+            "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi",
+            "-opt-in=androidx.compose.ui.ExperimentalComposeUiApi"
+        )
     }
 
     buildFeatures {
@@ -85,4 +92,5 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+    implementation("io.coil-kt:coil-compose:2.4.0")
 }

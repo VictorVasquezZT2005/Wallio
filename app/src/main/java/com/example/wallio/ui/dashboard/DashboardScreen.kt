@@ -8,6 +8,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,7 +28,8 @@ fun DashboardScreen(
     onAddTransaction: () -> Unit,
     onViewAllTransactions: () -> Unit,
     onViewReports: () -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onViewCredits: () -> Unit // NUEVO: agregar este parámetro
 ) {
     val transactionsState = viewModel.state.collectAsState().value
     val authState = authViewModel.authState.collectAsState().value
@@ -57,6 +59,10 @@ fun DashboardScreen(
                     titleContentColor = MaterialTheme.colorScheme.primary
                 ),
                 actions = {
+                    // Botón de créditos - ahora navega a la pantalla de créditos
+                    IconButton(onClick = onViewCredits) {
+                        Icon(Icons.Default.Person, contentDescription = "Créditos")
+                    }
                     IconButton(onClick = onLogout) {
                         Icon(Icons.Default.ExitToApp, contentDescription = "Cerrar sesión")
                     }
@@ -167,6 +173,7 @@ fun DashboardScreen(
     }
 }
 
+// Los demás componentes (ActionButtons, FinancialSummary, TransactionItem) se mantienen igual...
 @Composable
 fun ActionButtons(
     onViewAllTransactions: () -> Unit,
