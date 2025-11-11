@@ -1,5 +1,6 @@
 package com.example.wallio.ui.auth
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -25,13 +26,27 @@ class AuthViewModel(
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
 
     init {
-        checkAuthStatus()
+        // Cargar estado inicial
+        loadInitialAuthState()
+        // Observar cambios en el usuario
+        observeUserChanges()
     }
 
-    private fun checkAuthStatus() {
-        _authState.value = _authState.value.copy(
-            isAuthenticated = authRepository.isUserLoggedIn()
+    private fun loadInitialAuthState() {
+        val currentUser = authRepository.getCurrentUser()
+        _authState.value = AuthState(
+            isAuthenticated = authRepository.isUserLoggedIn(),
+            user = currentUser
         )
+        Log.d("AuthViewModel", "🔐 Estado inicial: ${if (currentUser != null) "Autenticado - ${currentUser.name}" else "No autenticado"}")
+    }
+
+    private fun observeUserChanges() {
+        viewModelScope.launch {
+            // Aquí deberías tener un Flow del repositorio que emita cambios
+            // Por ahora usamos un enfoque simple
+            // En un caso real, el repositorio emitiría cambios
+        }
     }
 
     fun login(email: String, password: String) {
@@ -40,15 +55,19 @@ class AuthViewModel(
             try {
                 val result = authRepository.login(email, password)
                 if (result.isSuccess) {
+                    val user = result.getOrNull()
                     _authState.value = AuthState(
                         isAuthenticated = true,
-                        user = result.getOrNull()
+                        user = user
                     )
+                    Log.d("AuthViewModel", "✅ Login exitoso: ${user?.name}")
                 } else {
                     _authState.value = AuthState(error = result.exceptionOrNull()?.message)
+                    Log.e("AuthViewModel", "❌ Error en login: ${result.exceptionOrNull()?.message}")
                 }
             } catch (e: Exception) {
                 _authState.value = AuthState(error = e.message)
+                Log.e("AuthViewModel", "❌ Excepción en login: ${e.message}")
             }
         }
     }
@@ -59,15 +78,19 @@ class AuthViewModel(
             try {
                 val result = authRepository.register(email, password, name)
                 if (result.isSuccess) {
+                    val user = result.getOrNull()
                     _authState.value = AuthState(
                         isAuthenticated = true,
-                        user = result.getOrNull()
+                        user = user
                     )
+                    Log.d("AuthViewModel", "✅ Registro exitoso: ${user?.name}")
                 } else {
                     _authState.value = AuthState(error = result.exceptionOrNull()?.message)
+                    Log.e("AuthViewModel", "❌ Error en registro: ${result.exceptionOrNull()?.message}")
                 }
             } catch (e: Exception) {
                 _authState.value = AuthState(error = e.message)
+                Log.e("AuthViewModel", "❌ Excepción en registro: ${e.message}")
             }
         }
     }
@@ -75,12 +98,39 @@ class AuthViewModel(
     fun logout() {
         viewModelScope.launch {
             authRepository.logout()
-            _authState.value = AuthState(isAuthenticated = false)
+            _authState.value = AuthState(isAuthenticated = false, user = null)
+            Log.d("AuthViewModel", "🚪 Logout realizado")
         }
     }
 
     fun clearError() {
         _authState.value = _authState.value.copy(error = null)
+    }
+
+    // Método para refrescar el estado de autenticación
+    fun refreshAuthState() {
+        val currentUser = authRepository.getCurrentUser()
+        _authState.value = AuthState(
+            isAuthenticated = authRepository.isUserLoggedIn(),
+            user = currentUser
+        )
+        Log.d("AuthViewModel", "🔄 Estado refrescado: ${if (currentUser != null) "Autenticado - ${currentUser.name}" else "No autenticado"}")
+    }
+
+    // Método para refrescar datos del usuario desde Firestore
+    suspend fun refreshUserData() {
+        try {
+            val user = authRepository.refreshUserData()
+            if (user != null) {
+                _authState.value = AuthState(
+                    isAuthenticated = true,
+                    user = user
+                )
+                Log.d("AuthViewModel", "✅ Datos de usuario refrescados: ${user.name}")
+            }
+        } catch (e: Exception) {
+            Log.e("AuthViewModel", "❌ Error refrescando datos de usuario: ${e.message}")
+        }
     }
 }
 

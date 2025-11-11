@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.wallio.ui.auth.AuthViewModel
 import com.example.wallio.ui.transactions.TransactionsViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -24,11 +25,21 @@ fun DashboardScreen(
     authViewModel: AuthViewModel,
     onAddTransaction: () -> Unit,
     onViewAllTransactions: () -> Unit,
-    onViewReports: () -> Unit, // Nuevo parámetro para reportes
+    onViewReports: () -> Unit,
     onLogout: () -> Unit
 ) {
     val transactionsState = viewModel.state.collectAsState().value
     val authState = authViewModel.authState.collectAsState().value
+    val coroutineScope = rememberCoroutineScope()
+
+    // Refrescar datos COMPLETOS del usuario cuando se muestra la pantalla
+    LaunchedEffect(Unit) {
+        authViewModel.refreshAuthState()
+        // También forzar la carga de datos desde Firestore
+        coroutineScope.launch {
+            authViewModel.refreshUserData()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -58,13 +69,21 @@ fun DashboardScreen(
             contentPadding = PaddingValues(16.dp)
         ) {
             item {
-                // Saludo de bienvenida
+                // Saludo de bienvenida - ahora debería cargar el nombre REAL
                 authState.user?.let { user ->
-                    Text(
-                        text = "Hola, ${user.name}",
-                        style = MaterialTheme.typography.headlineSmall,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
+                    if (user.name.isNotEmpty() && user.name != "Cargando..." && user.name != "Usuario") {
+                        Text(
+                            text = "Hola, ${user.name}",
+                            style = MaterialTheme.typography.headlineSmall,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+                    } else {
+                        Text(
+                            text = "Hola, Usuario",
+                            style = MaterialTheme.typography.headlineSmall,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+                    }
                 } ?: Text(
                     text = "Hola, Usuario",
                     style = MaterialTheme.typography.headlineSmall,
@@ -93,14 +112,25 @@ fun DashboardScreen(
 
             if (transactionsState.transactions.isEmpty()) {
                 item {
-                    Text(
-                        text = "No hay transacciones registradas",
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(32.dp),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = "No hay transacciones registradas",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "Presiona el botón + para agregar tu primera transacción",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
                 }
             } else {
                 items(transactionsState.transactions.take(5).size) { index ->
@@ -109,6 +139,21 @@ fun DashboardScreen(
                         transaction = transaction,
                         onDelete = { /* Implementar si es necesario */ }
                     )
+                }
+
+                // Mostrar mensaje si hay más transacciones
+                if (transactionsState.transactions.size > 5) {
+                    item {
+                        Text(
+                            text = "... y ${transactionsState.transactions.size - 5} más",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                    }
                 }
             }
         }
@@ -138,7 +183,7 @@ fun ActionButtons(
             Text("Ver todas las transacciones")
         }
 
-        // Botón para ver reportes (NUEVO)
+        // Botón para ver reportes
         Button(
             onClick = onViewReports,
             modifier = Modifier.fillMaxWidth(),
@@ -237,7 +282,9 @@ fun TransactionItem(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
                 Text(
                     text = transaction.title,
                     style = MaterialTheme.typography.bodyLarge,
@@ -245,6 +292,11 @@ fun TransactionItem(
                 )
                 Text(
                     text = transaction.category,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "${transaction.date.date}/${transaction.date.month + 1}/${transaction.date.year + 1900}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
