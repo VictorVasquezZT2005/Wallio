@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.example.wallio.ui.auth.AuthViewModel
 import com.example.wallio.ui.transactions.TransactionsViewModel
 import kotlinx.coroutines.launch
+import com.example.wallio.data.model.Transaction
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,12 +33,18 @@ fun DashboardScreen(
     val authState = authViewModel.authState.collectAsState().value
     val coroutineScope = rememberCoroutineScope()
 
-    // Refrescar datos COMPLETOS del usuario cuando se muestra la pantalla
+    // Refrescar datos del usuario cuando se muestra la pantalla
     LaunchedEffect(Unit) {
         authViewModel.refreshAuthState()
-        // También forzar la carga de datos desde Firestore
-        coroutineScope.launch {
-            authViewModel.refreshUserData()
+        // Intentar refrescar datos del usuario si está autenticado
+        if (authState.isAuthenticated) {
+            coroutineScope.launch {
+                try {
+                    authViewModel.refreshUserData()
+                } catch (e: Exception) {
+                    // Si el método no existe, simplemente ignoramos el error
+                }
+            }
         }
     }
 
@@ -69,7 +76,7 @@ fun DashboardScreen(
             contentPadding = PaddingValues(16.dp)
         ) {
             item {
-                // Saludo de bienvenida - ahora debería cargar el nombre REAL
+                // Saludo de bienvenida
                 authState.user?.let { user ->
                     if (user.name.isNotEmpty() && user.name != "Cargando..." && user.name != "Usuario") {
                         Text(
@@ -282,6 +289,16 @@ fun TransactionItem(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Icono de la categoría
+            Icon(
+                imageVector = Transaction.getCategoryIcon(transaction.category),
+                contentDescription = transaction.category,
+                modifier = Modifier
+                    .size(40.dp)
+                    .padding(end = 12.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+
             Column(
                 modifier = Modifier.weight(1f)
             ) {

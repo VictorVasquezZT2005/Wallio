@@ -37,25 +37,5 @@ data class Transaction(
                 else -> Icons.Default.Category
             }
         }
-
-        // Función para obtener el color según la categoría (opcional)
-        fun getCategoryColor(category: String): String {
-            return when (category) {
-                "Comida" -> "#FF9800" // Naranja
-                "Transporte" -> "#2196F3" // Azul
-                "Entretenimiento" -> "#9C27B0" // Púrpura
-                "Salud" -> "#F44336" // Rojo
-                "Educación" -> "#4CAF50" // Verde
-                "Ropa" -> "#E91E63" // Rosa
-                "Casa" -> "#795548" // Marrón
-                "Regalos" -> "#FFC107" // Amarillo
-                "Otros" -> "#607D8B" // Gris azulado
-                else -> "#9E9E9B" // Gris
-            }
-        }
     }
-}
-
-enum class TransactionType {
-    INCOME, EXPENSE
 }

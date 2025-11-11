@@ -26,10 +26,7 @@ class AuthViewModel(
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
 
     init {
-        // Cargar estado inicial
         loadInitialAuthState()
-        // Observar cambios en el usuario
-        observeUserChanges()
     }
 
     private fun loadInitialAuthState() {
@@ -41,17 +38,9 @@ class AuthViewModel(
         Log.d("AuthViewModel", "🔐 Estado inicial: ${if (currentUser != null) "Autenticado - ${currentUser.name}" else "No autenticado"}")
     }
 
-    private fun observeUserChanges() {
-        viewModelScope.launch {
-            // Aquí deberías tener un Flow del repositorio que emita cambios
-            // Por ahora usamos un enfoque simple
-            // En un caso real, el repositorio emitiría cambios
-        }
-    }
-
     fun login(email: String, password: String) {
         viewModelScope.launch {
-            _authState.value = AuthState(isLoading = true)
+            _authState.value = _authState.value.copy(isLoading = true, error = null)
             try {
                 val result = authRepository.login(email, password)
                 if (result.isSuccess) {
@@ -62,11 +51,17 @@ class AuthViewModel(
                     )
                     Log.d("AuthViewModel", "✅ Login exitoso: ${user?.name}")
                 } else {
-                    _authState.value = AuthState(error = result.exceptionOrNull()?.message)
+                    _authState.value = _authState.value.copy(
+                        isLoading = false,
+                        error = result.exceptionOrNull()?.message ?: "Error desconocido"
+                    )
                     Log.e("AuthViewModel", "❌ Error en login: ${result.exceptionOrNull()?.message}")
                 }
             } catch (e: Exception) {
-                _authState.value = AuthState(error = e.message)
+                _authState.value = _authState.value.copy(
+                    isLoading = false,
+                    error = e.message ?: "Error durante el login"
+                )
                 Log.e("AuthViewModel", "❌ Excepción en login: ${e.message}")
             }
         }
@@ -74,7 +69,7 @@ class AuthViewModel(
 
     fun register(email: String, password: String, name: String) {
         viewModelScope.launch {
-            _authState.value = AuthState(isLoading = true)
+            _authState.value = _authState.value.copy(isLoading = true, error = null)
             try {
                 val result = authRepository.register(email, password, name)
                 if (result.isSuccess) {
@@ -85,11 +80,17 @@ class AuthViewModel(
                     )
                     Log.d("AuthViewModel", "✅ Registro exitoso: ${user?.name}")
                 } else {
-                    _authState.value = AuthState(error = result.exceptionOrNull()?.message)
+                    _authState.value = _authState.value.copy(
+                        isLoading = false,
+                        error = result.exceptionOrNull()?.message ?: "Error desconocido"
+                    )
                     Log.e("AuthViewModel", "❌ Error en registro: ${result.exceptionOrNull()?.message}")
                 }
             } catch (e: Exception) {
-                _authState.value = AuthState(error = e.message)
+                _authState.value = _authState.value.copy(
+                    isLoading = false,
+                    error = e.message ?: "Error durante el registro"
+                )
                 Log.e("AuthViewModel", "❌ Excepción en registro: ${e.message}")
             }
         }
@@ -107,7 +108,6 @@ class AuthViewModel(
         _authState.value = _authState.value.copy(error = null)
     }
 
-    // Método para refrescar el estado de autenticación
     fun refreshAuthState() {
         val currentUser = authRepository.getCurrentUser()
         _authState.value = AuthState(

@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import com.example.wallio.data.model.Transaction
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -107,6 +108,16 @@ fun TransactionItem(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Icono de la categoría
+            Icon(
+                imageVector = Transaction.getCategoryIcon(transaction.category),
+                contentDescription = transaction.category,
+                modifier = Modifier
+                    .size(40.dp)
+                    .padding(end = 12.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+
             Column(
                 modifier = Modifier.weight(1f)
             ) {

@@ -28,6 +28,7 @@ fun RegisterScreen(
 
     val authState = viewModel.authState.collectAsState().value
 
+    // Observar estado de autenticación para registro exitoso
     LaunchedEffect(authState.isAuthenticated) {
         if (authState.isAuthenticated) {
             onRegisterSuccess()
@@ -56,7 +57,8 @@ fun RegisterScreen(
             leadingIcon = {
                 Icon(Icons.Default.Person, contentDescription = "Nombre")
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -69,7 +71,8 @@ fun RegisterScreen(
                 Icon(Icons.Default.Email, contentDescription = "Email")
             },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -83,7 +86,8 @@ fun RegisterScreen(
             },
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -97,7 +101,8 @@ fun RegisterScreen(
             },
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -113,10 +118,15 @@ fun RegisterScreen(
                     name.isNotEmpty() &&
                     email.isNotEmpty() &&
                     password.isNotEmpty() &&
+                    confirmPassword.isNotEmpty() &&
                     password == confirmPassword
         ) {
             if (authState.isLoading) {
-                CircularProgressIndicator(modifier = Modifier.size(16.dp))
+                CircularProgressIndicator(
+                    modifier = Modifier.size(16.dp),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    strokeWidth = 2.dp
+                )
             } else {
                 Text("Registrarse")
             }
@@ -128,19 +138,23 @@ fun RegisterScreen(
             Text("¿Ya tienes cuenta? Inicia sesión")
         }
 
+        // Mostrar errores del ViewModel
         authState.error?.let { error ->
             Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = error,
-                color = MaterialTheme.colorScheme.error
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodyMedium
             )
         }
 
+        // Mostrar error de contraseñas no coinciden
         if (password.isNotEmpty() && confirmPassword.isNotEmpty() && password != confirmPassword) {
             Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = "Las contraseñas no coinciden",
-                color = MaterialTheme.colorScheme.error
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodyMedium
             )
         }
     }

@@ -18,7 +18,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
     onNavigateToRegister: () -> Unit,
-    onSkipLogin: () -> Unit,
     viewModel: AuthViewModel = viewModel()
 ) {
     var email by remember { mutableStateOf("") }
@@ -62,7 +61,8 @@ fun LoginScreen(
                 Icon(Icons.Default.Email, contentDescription = "Email")
             },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -76,7 +76,8 @@ fun LoginScreen(
             },
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -89,7 +90,11 @@ fun LoginScreen(
             enabled = !authState.isLoading && email.isNotEmpty() && password.isNotEmpty()
         ) {
             if (authState.isLoading) {
-                CircularProgressIndicator(modifier = Modifier.size(16.dp))
+                CircularProgressIndicator(
+                    modifier = Modifier.size(16.dp),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    strokeWidth = 2.dp
+                )
             } else {
                 Text("Iniciar Sesión")
             }
@@ -101,18 +106,12 @@ fun LoginScreen(
             Text("¿No tienes cuenta? Regístrate")
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        TextButton(onClick = onSkipLogin) {
-            Text("Continuar sin cuenta")
-        }
-
-        // Mostrar errores
         authState.error?.let { error ->
             Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = error,
-                color = MaterialTheme.colorScheme.error
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodyMedium
             )
         }
     }

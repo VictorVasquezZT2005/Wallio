@@ -37,9 +37,6 @@ fun Navigation() {
             LoginScreen(
                 onLoginSuccess = { navController.navigate("dashboard") },
                 onNavigateToRegister = { navController.navigate("register") },
-                onSkipLogin = {
-                    navController.navigate("dashboard")
-                },
                 viewModel = authViewModel
             )
         }
@@ -64,7 +61,7 @@ fun Navigation() {
                 authViewModel = authViewModel,
                 onAddTransaction = { navController.navigate("add-transaction") },
                 onViewAllTransactions = { navController.navigate("transactions") },
-                onViewReports = { navController.navigate("reports") }, // NUEVO
+                onViewReports = { navController.navigate("reports") },
                 onLogout = {
                     authViewModel.logout()
                     navController.navigate("login") { popUpTo(0) }
