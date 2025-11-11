@@ -214,16 +214,11 @@ fun AddEditTransactionScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.height(200.dp)
             ) {
-                items(Transaction.categories.size) { index ->
-                    val category = Transaction.categories[index]
-                    FilterChip(
-                        selected = selectedCategory == category,
-                        onClick = { selectedCategory = category },
-                        label = { Text(category) },
-                        leadingIcon = {
-                            Icon(Icons.Default.Category, contentDescription = null)
-                        },
-                        modifier = Modifier.fillMaxWidth()
+                items(Transaction.categories) { category ->
+                    CategoryChip(
+                        category = category,
+                        isSelected = selectedCategory == category,
+                        onCategorySelected = { selectedCategory = category }
                     )
                 }
             }
@@ -241,4 +236,30 @@ fun AddEditTransactionScreen(
             )
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class) // ← AGREGAR ESTA ANOTACIÓN
+@Composable
+fun CategoryChip(
+    category: String,
+    isSelected: Boolean,
+    onCategorySelected: (String) -> Unit
+) {
+    FilterChip(
+        selected = isSelected,
+        onClick = { onCategorySelected(category) },
+        label = {
+            Text(
+                text = category,
+                maxLines = 1
+            )
+        },
+        leadingIcon = {
+            Icon(
+                imageVector = Transaction.getCategoryIcon(category),
+                contentDescription = category
+            )
+        },
+        modifier = Modifier.fillMaxWidth()
+    )
 }
