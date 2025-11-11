@@ -5,11 +5,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import com.github.mikephil.charting.charts.PieChart
+import com.github.mikephil.charting.components.Legend
 import com.github.mikephil.charting.data.PieData
 import com.github.mikephil.charting.data.PieDataSet
 import com.github.mikephil.charting.data.PieEntry
 import com.github.mikephil.charting.formatter.PercentFormatter
-import com.github.mikephil.charting.utils.ColorTemplate
 
 @Composable
 fun IncomeVsExpensePieChart(
@@ -24,7 +24,6 @@ fun IncomeVsExpensePieChart(
                 setUsePercentValues(true)
                 description.isEnabled = false
                 setDrawEntryLabels(true)
-                setEntryLabelColor(Color.BLACK)
                 setEntryLabelTextSize(12f)
 
                 // Configurar el agujero central
@@ -36,10 +35,13 @@ fun IncomeVsExpensePieChart(
                 // Configurar leyenda
                 legend.isEnabled = true
                 legend.textSize = 12f
-                legend.verticalAlignment = com.github.mikephil.charting.components.Legend.LegendVerticalAlignment.BOTTOM
-                legend.horizontalAlignment = com.github.mikephil.charting.components.Legend.LegendHorizontalAlignment.CENTER
-                legend.orientation = com.github.mikephil.charting.components.Legend.LegendOrientation.HORIZONTAL
+                legend.verticalAlignment = Legend.LegendVerticalAlignment.BOTTOM
+                legend.horizontalAlignment = Legend.LegendHorizontalAlignment.CENTER
+                legend.orientation = Legend.LegendOrientation.HORIZONTAL
                 legend.setDrawInside(false)
+                legend.xEntrySpace = 15f
+                legend.yEntrySpace = 5f
+                legend.formSize = 12f
 
                 // Animación
                 animateY(1000)
@@ -47,6 +49,17 @@ fun IncomeVsExpensePieChart(
             }
         },
         update = { chart ->
+            // Obtener colores del tema
+            val textColor = if (isSystemInDarkTheme()) {
+                Color.WHITE
+            } else {
+                Color.BLACK
+            }
+
+            // Configurar colores de texto
+            chart.setEntryLabelColor(textColor)
+            chart.legend.textColor = textColor
+
             // Calcular totales de ingresos y gastos
             val totalIncome = monthlyData.values.sumOf { it.first }
             val totalExpenses = monthlyData.values.sumOf { it.second }
@@ -92,4 +105,11 @@ fun IncomeVsExpensePieChart(
         },
         modifier = modifier
     )
+}
+
+// Función para detectar modo oscuro
+private fun isSystemInDarkTheme(): Boolean {
+    val configuration = android.content.res.Resources.getSystem().configuration
+    val currentNightMode = configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
+    return currentNightMode == android.content.res.Configuration.UI_MODE_NIGHT_YES
 }

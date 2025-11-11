@@ -1,6 +1,9 @@
 package com.example.wallio.ui.transactions
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -17,9 +20,6 @@ import com.example.wallio.data.model.Transaction
 import com.example.wallio.data.model.TransactionType
 import kotlinx.coroutines.launch
 import java.util.Date
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.GridCells
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,8 +50,57 @@ fun AddEditTransactionScreen(
     }
     var description by remember { mutableStateOf(transactionToEdit?.description ?: "") }
 
+    // Estados para alertas
+    var showTitleError by remember { mutableStateOf(false) }
+    var showAmountError by remember { mutableStateOf(false) }
+    var showInvalidAmountError by remember { mutableStateOf(false) }
+
     val coroutineScope = rememberCoroutineScope()
     var isLoading by remember { mutableStateOf(false) }
+
+    // Categorías separadas por tipo (usando tus categorías existentes + nuevas)
+    val expenseCategories = listOf(
+        "Comida",
+        "Transporte",
+        "Entretenimiento",
+        "Salud",
+        "Educación",
+        "Ropa",
+        "Casa",
+        "Regalos",
+        "Viajes",
+        "Servicios",
+        "Tecnología",
+        "Deportes",
+        "Cuidado Personal",
+        "Mascotas",
+        "Impuestos",
+        "Otros Gastos"
+    )
+
+    val incomeCategories = listOf(
+        "Salario",
+        "Freelance",
+        "Inversiones",
+        "Negocio",
+        "Regalos",
+        "Premios",
+        "Ventas",
+        "Alquiler",
+        "Intereses",
+        "Dividendos",
+        "Bonos",
+        "Comisiones",
+        "Honorarios",
+        "Reembolsos",
+        "Herencia",
+        "Otros Ingresos"
+    )
+
+    // Categorías actuales basadas en el tipo seleccionado
+    val currentCategories = remember(selectedType) {
+        if (selectedType == TransactionType.INCOME) incomeCategories else expenseCategories
+    }
 
     // Efecto para cargar datos cuando la transacción se encuentra
     LaunchedEffect(transactionToEdit) {
@@ -61,6 +110,80 @@ fun AddEditTransactionScreen(
             selectedType = transactionToEdit.type
             selectedCategory = transactionToEdit.category
             description = transactionToEdit.description
+        }
+    }
+
+    // Efecto para resetear categoría cuando cambia el tipo
+    LaunchedEffect(selectedType) {
+        if (!currentCategories.contains(selectedCategory)) {
+            selectedCategory = currentCategories.first()
+        }
+    }
+
+    // Función para validar y guardar
+    fun validateAndSave() {
+        // Resetear errores
+        showTitleError = false
+        showAmountError = false
+        showInvalidAmountError = false
+
+        var isValid = true
+
+        // Validar título
+        if (title.isEmpty()) {
+            showTitleError = true
+            isValid = false
+        }
+
+        // Validar monto
+        if (amount.isEmpty()) {
+            showAmountError = true
+            isValid = false
+        } else if (amount.toDoubleOrNull() == null || amount.toDouble() <= 0) {
+            showInvalidAmountError = true
+            isValid = false
+        }
+
+        if (isValid && !isLoading) {
+            isLoading = true
+            coroutineScope.launch {
+                val userId = viewModel.getCurrentUserId()
+                val transactionAmount = amount.toDouble()
+
+                val transaction = if (isEditMode && transactionToEdit != null) {
+                    // Modo edición - mantener el mismo ID y fecha original
+                    transactionToEdit.copy(
+                        title = title,
+                        amount = transactionAmount,
+                        type = selectedType,
+                        category = selectedCategory,
+                        description = description
+                    )
+                } else {
+                    // Modo creación - nuevo ID y fecha actual
+                    Transaction(
+                        id = Transaction().id, // Generar nuevo ID
+                        title = title,
+                        amount = transactionAmount,
+                        type = selectedType,
+                        category = selectedCategory,
+                        description = description,
+                        date = Date(),
+                        userId = userId
+                    )
+                }
+
+                val success = if (isEditMode) {
+                    viewModel.updateTransaction(transaction)
+                } else {
+                    viewModel.addTransaction(transaction)
+                }
+
+                if (success) {
+                    onSaveSuccess()
+                }
+                isLoading = false
+            }
         }
     }
 
@@ -85,49 +208,7 @@ fun AddEditTransactionScreen(
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                onClick = {
-                    if (title.isNotEmpty() && amount.isNotEmpty() && !isLoading) {
-                        isLoading = true
-                        coroutineScope.launch {
-                            val userId = viewModel.getCurrentUserId()
-                            val transactionAmount = amount.toDoubleOrNull() ?: 0.0
-
-                            val transaction = if (isEditMode && transactionToEdit != null) {
-                                // Modo edición - mantener el mismo ID y fecha original
-                                transactionToEdit.copy(
-                                    title = title,
-                                    amount = transactionAmount,
-                                    type = selectedType,
-                                    category = selectedCategory,
-                                    description = description
-                                )
-                            } else {
-                                // Modo creación - nuevo ID y fecha actual
-                                Transaction(
-                                    id = Transaction().id, // Generar nuevo ID
-                                    title = title,
-                                    amount = transactionAmount,
-                                    type = selectedType,
-                                    category = selectedCategory,
-                                    description = description,
-                                    date = Date(),
-                                    userId = userId
-                                )
-                            }
-
-                            val success = if (isEditMode) {
-                                viewModel.updateTransaction(transaction)
-                            } else {
-                                viewModel.addTransaction(transaction)
-                            }
-
-                            if (success) {
-                                onSaveSuccess()
-                            }
-                            isLoading = false
-                        }
-                    }
-                },
+                onClick = { validateAndSave() },
                 modifier = Modifier.padding(16.dp)
             ) {
                 if (isLoading) {
@@ -168,7 +249,11 @@ fun AddEditTransactionScreen(
                             selectedContainerColor = if (type == TransactionType.INCOME)
                                 MaterialTheme.colorScheme.primaryContainer
                             else
-                                MaterialTheme.colorScheme.errorContainer
+                                MaterialTheme.colorScheme.errorContainer,
+                            selectedLabelColor = if (type == TransactionType.INCOME)
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                            else
+                                MaterialTheme.colorScheme.onErrorContainer
                         ),
                         modifier = Modifier.weight(1f)
                     )
@@ -176,35 +261,72 @@ fun AddEditTransactionScreen(
             }
 
             // Título
-            OutlinedTextField(
-                value = title,
-                onValueChange = { title = it },
-                label = { Text("Título") },
-                leadingIcon = {
-                    Icon(Icons.Default.Description, contentDescription = "Título")
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
+            Column {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = {
+                        title = it
+                        showTitleError = false // Resetear error cuando el usuario empiece a escribir
+                    },
+                    label = { Text("Título") },
+                    leadingIcon = {
+                        Icon(Icons.Default.Description, contentDescription = "Título")
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    isError = showTitleError
+                )
+                if (showTitleError) {
+                    Text(
+                        text = "El título es obligatorio",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                    )
+                }
+            }
 
             // Monto
-            OutlinedTextField(
-                value = amount,
-                onValueChange = {
-                    if (it.isEmpty() || it.matches(Regex("^\\d*(\\.\\d{0,2})?$"))) {
-                        amount = it
-                    }
-                },
-                label = { Text("Monto") },
-                leadingIcon = {
-                    Icon(Icons.Default.Payments, contentDescription = "Monto")
-                },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.fillMaxWidth()
-            )
+            Column {
+                OutlinedTextField(
+                    value = amount,
+                    onValueChange = {
+                        if (it.isEmpty() || it.matches(Regex("^\\d*(\\.\\d{0,2})?$"))) {
+                            amount = it
+                            showAmountError = false // Resetear errores cuando el usuario empiece a escribir
+                            showInvalidAmountError = false
+                        }
+                    },
+                    label = { Text("Monto") },
+                    leadingIcon = {
+                        Icon(Icons.Default.Payments, contentDescription = "Monto")
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    isError = showAmountError || showInvalidAmountError
+                )
+                if (showAmountError) {
+                    Text(
+                        text = "El monto es obligatorio",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                    )
+                }
+                if (showInvalidAmountError) {
+                    Text(
+                        text = "Ingresa un monto válido mayor a 0",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                    )
+                }
+            }
 
             // Categoría
             Text(
-                text = "Categoría",
+                text = "Categoría - ${if (selectedType == TransactionType.INCOME) "Ingresos" else "Gastos"}",
                 style = MaterialTheme.typography.titleMedium
             )
 
@@ -214,7 +336,7 @@ fun AddEditTransactionScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.height(200.dp)
             ) {
-                items(Transaction.categories) { category ->
+                items(currentCategories) { category ->
                     CategoryChip(
                         category = category,
                         isSelected = selectedCategory == category,
@@ -228,17 +350,27 @@ fun AddEditTransactionScreen(
                 value = description,
                 onValueChange = { description = it },
                 label = { Text("Descripción (opcional)") },
+                leadingIcon = {
+                    Icon(Icons.Default.Category, contentDescription = "Descripción")
+                },
                 singleLine = false,
                 maxLines = 3,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(120.dp)
             )
+
+            // Alertas como Snackbar
+            if (showTitleError || showAmountError || showInvalidAmountError) {
+                LaunchedEffect(showTitleError, showAmountError, showInvalidAmountError) {
+                    // El efecto se ejecuta cuando hay errores, mostrando mensajes en los campos
+                }
+            }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class) // ← AGREGAR ESTA ANOTACIÓN
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CategoryChip(
     category: String,
@@ -251,15 +383,21 @@ fun CategoryChip(
         label = {
             Text(
                 text = category,
-                maxLines = 1
+                maxLines = 1,
+                style = MaterialTheme.typography.bodySmall
             )
         },
         leadingIcon = {
             Icon(
                 imageVector = Transaction.getCategoryIcon(category),
-                contentDescription = category
+                contentDescription = category,
+                modifier = Modifier.size(18.dp)
             )
         },
+        colors = FilterChipDefaults.filterChipColors(
+            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+            selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
+        ),
         modifier = Modifier.fillMaxWidth()
     )
 }
