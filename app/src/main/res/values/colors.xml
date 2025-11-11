@@ -1,7 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#6750A4</color>
-    <color name="colorOnPrimary">#FFFFFF</color>
-    <color name="colorPrimaryContainer">#EADDFF</color>
-    <color name="colorOnPrimaryContainer">#21005D</color>
+    <!-- Tus colores existentes -->
+    <color name="ic_launcher_background">#2196F3</color>
 </resources>
