@@ -4,21 +4,19 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Analytics
-import androidx.compose.material.icons.filled.ExitToApp
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.wallio.ui.auth.AuthViewModel
 import com.example.wallio.ui.transactions.TransactionsViewModel
 import kotlinx.coroutines.launch
 import com.example.wallio.data.model.Transaction
+import com.example.wallio.data.model.TransactionType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,23 +27,20 @@ fun DashboardScreen(
     onViewAllTransactions: () -> Unit,
     onViewReports: () -> Unit,
     onLogout: () -> Unit,
-    onViewCredits: () -> Unit // NUEVO: agregar este parámetro
+    onViewCredits: () -> Unit
 ) {
     val transactionsState = viewModel.state.collectAsState().value
     val authState = authViewModel.authState.collectAsState().value
     val coroutineScope = rememberCoroutineScope()
 
-    // Refrescar datos del usuario cuando se muestra la pantalla
+    // Refrescar estado del usuario al cargar
     LaunchedEffect(Unit) {
         authViewModel.refreshAuthState()
-        // Intentar refrescar datos del usuario si está autenticado
         if (authState.isAuthenticated) {
             coroutineScope.launch {
                 try {
                     authViewModel.refreshUserData()
-                } catch (e: Exception) {
-                    // Si el método no existe, simplemente ignoramos el error
-                }
+                } catch (_: Exception) { }
             }
         }
     }
@@ -59,9 +54,8 @@ fun DashboardScreen(
                     titleContentColor = MaterialTheme.colorScheme.primary
                 ),
                 actions = {
-                    // Botón de créditos - ahora navega a la pantalla de créditos
                     IconButton(onClick = onViewCredits) {
-                        Icon(Icons.Default.Person, contentDescription = "Créditos")
+                        Icon(Icons.Default.Info, contentDescription = "Créditos")
                     }
                     IconButton(onClick = onLogout) {
                         Icon(Icons.Default.ExitToApp, contentDescription = "Cerrar sesión")
@@ -82,33 +76,20 @@ fun DashboardScreen(
             contentPadding = PaddingValues(16.dp)
         ) {
             item {
-                // Saludo de bienvenida
-                authState.user?.let { user ->
-                    if (user.name.isNotEmpty() && user.name != "Cargando..." && user.name != "Usuario") {
-                        Text(
-                            text = "Hola, ${user.name}",
-                            style = MaterialTheme.typography.headlineSmall,
-                            modifier = Modifier.padding(bottom = 16.dp)
-                        )
-                    } else {
-                        Text(
-                            text = "Hola, Usuario",
-                            style = MaterialTheme.typography.headlineSmall,
-                            modifier = Modifier.padding(bottom = 16.dp)
-                        )
-                    }
-                } ?: Text(
-                    text = "Hola, Usuario",
+                val username = authState.user?.name?.takeIf {
+                    it.isNotEmpty() && it != "Cargando..." && it != "Usuario"
+                } ?: "Usuario"
+
+                Text(
+                    text = "Hola, $username",
                     style = MaterialTheme.typography.headlineSmall,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
 
-                // Resumen financiero
                 FinancialSummary(viewModel = viewModel)
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Botones de acciones
                 ActionButtons(
                     onViewAllTransactions = onViewAllTransactions,
                     onViewReports = onViewReports
@@ -116,7 +97,6 @@ fun DashboardScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Últimas transacciones
                 Text(
                     text = "Últimas transacciones",
                     style = MaterialTheme.typography.headlineSmall
@@ -146,15 +126,12 @@ fun DashboardScreen(
                     }
                 }
             } else {
-                items(transactionsState.transactions.take(5).size) { index ->
-                    val transaction = transactionsState.transactions.take(5)[index]
-                    TransactionItem(
-                        transaction = transaction,
-                        onDelete = { /* Implementar si es necesario */ }
-                    )
+                val recentTransactions = transactionsState.transactions.take(5)
+                items(recentTransactions.size) { index ->
+                    val transaction = recentTransactions[index]
+                    TransactionItem(transaction = transaction, onDelete = { })
                 }
 
-                // Mostrar mensaje si hay más transacciones
                 if (transactionsState.transactions.size > 5) {
                     item {
                         Text(
@@ -164,7 +141,7 @@ fun DashboardScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(16.dp),
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            textAlign = TextAlign.Center
                         )
                     }
                 }
@@ -173,7 +150,6 @@ fun DashboardScreen(
     }
 }
 
-// Los demás componentes (ActionButtons, FinancialSummary, TransactionItem) se mantienen igual...
 @Composable
 fun ActionButtons(
     onViewAllTransactions: () -> Unit,
@@ -183,7 +159,6 @@ fun ActionButtons(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Botón para ver todas las transacciones
         Button(
             onClick = onViewAllTransactions,
             modifier = Modifier.fillMaxWidth(),
@@ -197,7 +172,6 @@ fun ActionButtons(
             Text("Ver todas las transacciones")
         }
 
-        // Botón para ver reportes
         Button(
             onClick = onViewReports,
             modifier = Modifier.fillMaxWidth(),
@@ -208,7 +182,7 @@ fun ActionButtons(
         ) {
             Icon(Icons.Default.Analytics, contentDescription = null)
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Ver Reportes y Gráficos")
+            Text("Ver reportes y gráficos")
         }
     }
 }
@@ -226,11 +200,9 @@ fun FinancialSummary(viewModel: TransactionsViewModel) {
             containerColor = MaterialTheme.colorScheme.primaryContainer
         )
     ) {
-        Column(
-            modifier = Modifier.padding(20.dp)
-        ) {
+        Column(modifier = Modifier.padding(20.dp)) {
             Text(
-                text = "Balance Total",
+                text = "Balance total",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
@@ -249,10 +221,7 @@ fun FinancialSummary(viewModel: TransactionsViewModel) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = "Ingresos",
-                        style = MaterialTheme.typography.bodySmall
-                    )
+                    Text(text = "Ingresos", style = MaterialTheme.typography.bodySmall)
                     Text(
                         text = "+$${String.format("%.2f", income)}",
                         style = MaterialTheme.typography.bodyLarge,
@@ -262,10 +231,7 @@ fun FinancialSummary(viewModel: TransactionsViewModel) {
                 }
 
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = "Gastos",
-                        style = MaterialTheme.typography.bodySmall
-                    )
+                    Text(text = "Gastos", style = MaterialTheme.typography.bodySmall)
                     Text(
                         text = "-$${String.format("%.2f", expenses)}",
                         style = MaterialTheme.typography.bodyLarge,
@@ -280,7 +246,7 @@ fun FinancialSummary(viewModel: TransactionsViewModel) {
 
 @Composable
 fun TransactionItem(
-    transaction: com.example.wallio.data.model.Transaction,
+    transaction: Transaction,
     onDelete: () -> Unit
 ) {
     Card(
@@ -296,7 +262,6 @@ fun TransactionItem(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Icono de la categoría
             Icon(
                 imageVector = Transaction.getCategoryIcon(transaction.category),
                 contentDescription = transaction.category,
@@ -306,33 +271,23 @@ fun TransactionItem(
                 tint = MaterialTheme.colorScheme.primary
             )
 
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(transaction.title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                Text(transaction.category, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(
-                    text = transaction.title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = transaction.category,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = "${transaction.date.date}/${transaction.date.month + 1}/${transaction.date.year + 1900}",
+                    "${transaction.date.date}/${transaction.date.month + 1}/${transaction.date.year + 1900}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
             Text(
-                text = if (transaction.type == com.example.wallio.data.model.TransactionType.INCOME)
+                text = if (transaction.type == TransactionType.INCOME)
                     "+$${String.format("%.2f", transaction.amount)}"
                 else
                     "-$${String.format("%.2f", transaction.amount)}",
                 style = MaterialTheme.typography.bodyLarge,
-                color = if (transaction.type == com.example.wallio.data.model.TransactionType.INCOME)
+                color = if (transaction.type == TransactionType.INCOME)
                     MaterialTheme.colorScheme.primary
                 else
                     MaterialTheme.colorScheme.error,
